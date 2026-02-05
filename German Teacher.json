@@ -1,0 +1,71 @@
+{
+  "name": "German Teacher",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": { "item": [{ "mode": "everyHour" }] },
+        "channelId": "YOUR_YOUTUBE_CHANNEL_ID"
+      },
+      "type": "n8n-nodes-base.youTubeTrigger",
+      "typeVersion": 1,
+      "position": [-600, 0],
+      "id": "yt-trigger-id",
+      "name": "YouTube Trigger",
+      "credentials": {
+        "youTubeOAuth2Api": { "id": "YOUR_YT_CREDENTIAL_ID", "name": "YouTube Account" }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supadata",
+      "typeVersion": 1,
+      "position": [-300, 0],
+      "id": "supadata-id",
+      "name": "Get Transcript",
+      "credentials": {
+        "supadataApi": { "id": "YOUR_SUPADATA_CREDENTIAL_ID", "name": "Supadata API" }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "options": {
+          "systemMessage": "Estrai termini tecnici automotive in tedesco dal testo e fornisci la traduzione."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.3,
+      "position": [0, 0],
+      "id": "ai-agent-id",
+      "name": "Vocabulary Extractor",
+      "credentials": {
+        "openAiApi": { "id": "YOUR_OPENAI_CREDENTIAL_ID", "name": "OpenAi Account" }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list" },
+        "sheetName": "Glossary",
+        "columns": { "mappingMode": "defineBelow", "value": { "Tedesco": "={{ $json.term }}", "Italiano": "={{ $json.translation }}" } }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [300, 0],
+      "id": "gsheets-id",
+      "name": "Update Glossary",
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "YOUR_GSHEETS_CREDENTIAL_ID", "name": "Google Sheets Account" }
+      }
+    }
+  ],
+  "connections": {
+    "YouTube Trigger": { "main": [[{ "node": "Get Transcript", "type": "main", "index": 0 }]] },
+    "Get Transcript": { "main": [[{ "node": "Vocabulary Extractor", "type": "main", "index": 0 }]] },
+    "Vocabulary Extractor": { "main": [[{ "node": "Update Glossary", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
